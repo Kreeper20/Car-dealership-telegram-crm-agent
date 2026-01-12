@@ -1,0 +1,576 @@
+{
+  "name": "Car Dealership crm agent",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Message:{{ $json.message.text }}",
+        "options": {
+          "systemMessage": "=# Overview\n\n- You are a helpful assistant for Classic dealership, your job is to get information about the dealership from pinecone you need and send the info to telegram.\nAlways call the telegram tool no mater what and get your output from the memory\n\n- If you generate a message intended for the user, you MUST immediately\nsend it using the Telegram tool in the same turn.\n-Storing a message in memory is NOT a reply.\n\n-You are not allowed to generate user-facing text without sending it via Telegram in the same execution.\n\n-Reply to a text only once with the given reply\n\n- always call the sheets tool first to save info on a new customer so you can remember them\n- You have access to google sheet tools Call the tool to get info on a user so you can construct a mail with the info\n- Do NOT update Sheets if the user message does not introduce a new data field.\n- if a customer asks for an apointment you must ask for their name and phone number\n\n## Output\nThis should be your greeting only for a new user\nWelcome to Classic Dealership 🚗✨  \nWhat can I help you with today?\n• Car info\n• Pricing\n• Book an appointment 😊\n\n- your replies shoudnt be random , it should just focus on the particlar topic at the time\n- Keep responses short brief and to the point\n- be nice and use emojis\n- give spacing/align texts to make text organised, if its a list organise the list.\n- if the user has asked a question before force reply and confirm first\n\n- Call the calendar tool to create an event when a user wants to fix an appointment and ask for neccessary info dont send a link just a confirmation message\n- Here is the current date/time: {{ $now }}\n\n- You must call the gmail tool to inform them a customer booked an apointment"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -176,
+        -336
+      ],
+      "id": "ab49c17d-cff8-46c1-93b9-5420dd66f1f5",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -704,
+        -112
+      ],
+      "id": "64efadf2-c842-43ed-b2c3-a32785a19ca6",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "pmm9PJNZdIw4JcoV",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -368,
+        96
+      ],
+      "id": "5959e7cd-0468-4695-9eba-76767ed7c516",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "pmm9PJNZdIw4JcoV",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": "={{ [\"message\"] }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -928,
+        -336
+      ],
+      "id": "af5b4d65-e07e-44f5-8846-8b637d1df072",
+      "name": "Telegram Trigger",
+      "webhookId": "a1ae6a39-fa6c-4b55-b11f-b022294d9e84",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZoMQKeIwxyFRL31B",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "work with the ai agent to retrieve info from test and answer to telegram messages",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "test",
+          "mode": "list",
+          "cachedResultName": "test"
+        },
+        "options": {
+          "pineconeNamespace": "test"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        -448,
+        -112
+      ],
+      "id": "c46b770f-5ef8-4d55-a002-cdec9cab82bc",
+      "name": "Pinecone",
+      "credentials": {
+        "pineconeApi": {
+          "id": "MmNsFZwrCtuSE8gV",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": " Overview\nUse this tool to save or update user information.\n\nCall this tool when:\n- The user expresses interest in buying, pricing, or availability\nOR\n- The user provides any of the following:\n  - user_budget\n  - car_interest\n  - phone_number\n  - address\n\nAlways send:\n- user_id\n- username\n- Last_message\n_ Date",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1JZforicgbR3awWMEOUx24iMCkn_U4psdysVWn-Hjklw",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JZforicgbR3awWMEOUx24iMCkn_U4psdysVWn-Hjklw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JZforicgbR3awWMEOUx24iMCkn_U4psdysVWn-Hjklw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_id": "={{ $json.message.from.id }}",
+            "username": "={{ $json.message.from.username }}",
+            "Last_Message": "={{ $json.message.text }}",
+            "user_budget": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_budget', ``, 'string') }}",
+            "phone_number": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('phone_number', ``, 'string') }}",
+            "address": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('address', ``, 'string') }}",
+            "car_interest": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('car_interest', ``, 'string') }}",
+            "last_message_at": "={{ $json.message.date }}",
+            "appointment_date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('appointment_date', ``, 'string') }}",
+            "appointment_time": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('appointment_time', ``, 'string') }}",
+            "conversation_stage": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conversation_stage', ``, 'string') }}",
+            "Name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Name', ``, 'string') }}"
+          },
+          "matchingColumns": [
+            "user_id"
+          ],
+          "schema": [
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "username",
+              "displayName": "username",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last_Message",
+              "displayName": "Last_Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_message_at",
+              "displayName": "last_message_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "user_budget",
+              "displayName": "user_budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "car_interest",
+              "displayName": "car_interest",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "appointment_date",
+              "displayName": "appointment_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "appointment_time",
+              "displayName": "appointment_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "conversation_stage",
+              "displayName": "conversation_stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -160,
+        -112
+      ],
+      "id": "cbc1c0f9-786a-4f01-9c7b-4fca6dc007ba",
+      "name": "Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PtwihinitjqQO85n",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "always call this tool to reply to any text ",
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Text', ``, 'string') }}",
+        "replyMarkup": "forceReply",
+        "forceReply": {
+          "force_reply": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Force_Reply', ``, 'boolean') }}"
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegramTool",
+      "typeVersion": 1.2,
+      "position": [
+        -32,
+        -112
+      ],
+      "id": "ebf631b5-4d3f-41b1-a262-88053a25f49a",
+      "name": "Telegram",
+      "webhookId": "5881b7a5-7233-43dd-8a0f-32fe3e50d15c",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZoMQKeIwxyFRL31B",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to notify a human sales representative\nwhen a user is ready to buy a car or asks for a call.\n\nCall this tool when a user books an apointment or wants a call\n\nInclude a clear summary with:\n- Name\n- Phone number\n- Budget\n- Car interest\n- Location\n- Telegram username or chat ID\n- Any important notes\n\nDo NOT send duplicate emails for the same user.",
+        "sendTo": "odianosen882@gmail.com",
+        "subject": "🔥 New Hot Lead – Dealership AI",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        96,
+        -112
+      ],
+      "id": "f6aa75be-c67d-462a-acdb-7a21ba55efdb",
+      "name": "Send a message in Gmail",
+      "webhookId": "b32f8542-abd4-4736-ab92-1bf255e1065b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "X6Z8b8iGJNptpM95",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Call this tool to remember info about a user before anything",
+        "documentId": {
+          "__rl": true,
+          "value": "1JZforicgbR3awWMEOUx24iMCkn_U4psdysVWn-Hjklw",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JZforicgbR3awWMEOUx24iMCkn_U4psdysVWn-Hjklw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JZforicgbR3awWMEOUx24iMCkn_U4psdysVWn-Hjklw/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "user_id",
+              "lookupValue": "={{ $json.message.from.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        -112
+      ],
+      "id": "f5d31a9f-49c5-4f5a-b4ad-1db703c67b55",
+      "name": "Lookup User",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PtwihinitjqQO85n",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "4910e6d8ceb0726bcf2d0c3f58ab37b816e6bc809ac148021dccb5606dd1f6ed@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Dealership "
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        352,
+        -112
+      ],
+      "id": "b9a4f877-9d5b-4c90-8546-0cc7641f8a5e",
+      "name": "Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "RMUkA5obyT5sKJ2P",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=User:{{ $json.message.from.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -576,
+        -112
+      ],
+      "id": "23da9b6d-8254-4d5d-8f05-253ac3961e76",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "NT8Jsg59nu6nw4Oq",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "Pinecone": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup User": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "cd7c9bf2-aa5d-4cf1-81e0-3998c9e14ba5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b195f070473944b1d035ae3cdbac950b28156a8693ccceeb7e6d63fc0d075ad0"
+  },
+  "id": "BVVGBX4B55Xc8w8K",
+  "tags": []
+}
